@@ -87,16 +87,16 @@ func kubernetesInstallBasePackages(t *Target, data interface{}) error {
 	if !ok {
 		return errors.New("couldn't access kubernetes base OS configuration")
 	}
+        currentVersion := kubernetes.MajorMinorVersion(v)
 
-	t.ssh("zypper", "--non-interactive", "install", "--force",
-		fmt.Sprintf("kubernetes-kubeadm=%s", kubernetesBaseOSConfiguration.KubeadmVersion),
-		fmt.Sprintf("cri-o=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
-		fmt.Sprintf("kubernetes-client=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
-		fmt.Sprintf("kubernetes-common=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
-		fmt.Sprintf("kubernetes-kubelet=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
+	_, _, err = t.ssh("zypper", "--non-interactive", "install", "--force",
+		fmt.Sprintf("kubernetes-kubeadm=%s", currentVersion),
+		fmt.Sprintf("cri-o=%s", currentVersion),
+		fmt.Sprintf("kubernetes-client=%s", currentVersion),
+		fmt.Sprintf("kubernetes-common=%s", currentVersion),
+		fmt.Sprintf("kubernetes-kubelet=%s", currentVersion),
 	)
-	// FIXME: do not ignore error, beta3 to beta4 package conflicts
-	return nil
+	return err
 }
 
 func kubernetesRestartServices(t *Target, data interface{}) error {
