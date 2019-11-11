@@ -42,7 +42,8 @@ const (
 func init() {
 	stateMap["kubernetes.bootstrap.upload-secrets"] = kubernetesUploadSecrets(KubernetesUploadSecretsContinueOnError)
 	stateMap["kubernetes.join.upload-secrets"] = kubernetesUploadSecrets(KubernetesUploadSecretsFailOnError)
-	stateMap["kubernetes.install-node-pattern"] = kubernetesInstallNodePattern
+	//stateMap["kubernetes.install-node-pattern"] = kubernetesInstallNodePattern
+        stateMap["kubernetes.install-node-pattern"] = kubernetesInstallBasePackages
 	stateMap["kubernetes.restart-services"] = kubernetesRestartServices
 	stateMap["kubernetes.wait-for-kubelet"] = kubernetesWaitForKubelet
 }
@@ -79,6 +80,23 @@ func kubernetesInstallNodePattern(t *Target, data interface{}) error {
 	}
 	_, _, err = t.ssh("zypper", "--non-interactive", "install", patternName)
 	return err
+}
+
+func kubernetesInstallBasePackages(t *Target, data interface{}) error {
+	kubernetesBaseOSConfiguration, ok := data.(deployments.KubernetesBaseOSConfiguration)
+	if !ok {
+		return errors.New("couldn't access kubernetes base OS configuration")
+	}
+
+	t.ssh("zypper", "--non-interactive", "install", "--force",
+		fmt.Sprintf("kubernetes-kubeadm=%s", kubernetesBaseOSConfiguration.KubeadmVersion),
+		fmt.Sprintf("cri-o=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
+		fmt.Sprintf("kubernetes-client=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
+		fmt.Sprintf("kubernetes-common=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
+		fmt.Sprintf("kubernetes-kubelet=%s", kubernetesBaseOSConfiguration.KubernetesVersion),
+	)
+	// FIXME: do not ignore error, beta3 to beta4 package conflicts
+	return nil
 }
 
 func kubernetesRestartServices(t *Target, data interface{}) error {
